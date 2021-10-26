@@ -1,0 +1,65 @@
+
+import { AddonData } from "@pepperi-addons/papi-sdk";
+
+export interface DataQuery extends AddonData {
+    Resource: ResourceType,
+    Type: DataType,
+    GroupBy?: GroupBy[],
+    Series: Serie[],
+    DynamicFilterFields: [],
+    Filter: {},
+    Scope: {
+        User: UserType,
+        Account: AccountType
+    }
+}
+
+export interface GroupBy {
+    FieldID: string;
+    Interval?: number;
+    IntervalUnit?: IntervalUnit;
+}
+
+export interface Serie {
+    AggregatedFields: AggregatedField[];
+    Interval?: number;
+    IntervalUnit?: IntervalUnit;
+    BreakBy:
+    {
+        FieldID: string,
+        Interval: number,
+        IntervalUnit: IntervalUnit,
+        Top: {
+            FieldID: string,
+            Max: number,
+            Ascending: boolean,
+        }
+    }
+}
+
+export interface AggregatedField {
+    FieldID: string,
+    Aggregator: Aggregator,
+    Alias?: string
+}
+
+export declare const UserTypes: readonly ["Current" , "UnderMyRole" ,"All"];
+export declare type UserType = typeof UserTypes[number];
+
+export declare const AccountTypes: readonly ["Assigned", "All"];
+export declare type AccountType = typeof AccountTypes[number];
+
+export declare const ResourceTypes: readonly ["all_activities","transactions", "transaction_lines"];
+export declare type ResourceType = typeof ResourceTypes[number];
+
+export declare const DataTypes: readonly ["Single", "Series", "MultiSeries"];
+export declare type DataType = typeof DataTypes[number];
+
+export declare const IntervalUnits: readonly ["Days", "Weeks", "Months", "Years"];
+export declare type IntervalUnit= typeof IntervalUnits[number];
+
+export declare const Aggregators: readonly ["Sum", "Count", "Average"];
+export declare type Aggregator = typeof Aggregators[number];
+
+export const DATA_QUREIES_TABLE_NAME = 'DataQueries';
+
