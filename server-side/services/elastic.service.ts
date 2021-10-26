@@ -52,7 +52,7 @@ class ElasticService {
         // handle aggregation by series
         for (const serie of query.Series) {
             // handle aggregation by break by
-            const calenderInterval = `${this.intervalUnitMap[serie.BreakBy.IntervalUnit]}${serie.BreakBy.Interval}`;
+            const calenderInterval = `${serie.BreakBy.Interval}${this.intervalUnitMap[serie.BreakBy.IntervalUnit]}`;
             requestBody.agg(esb.dateHistogramAggregation(serie.BreakBy.FieldID, serie.BreakBy.FieldID).calendarInterval(calenderInterval));
 
             for (const aggregatedField of serie.AggregatedFields) {
