@@ -1,19 +1,14 @@
-mat-card{
-    width: 600px;
-    // padding-top: 2rem;
-}
+@import 'ngx-lib/src/core/style/abstracts/mixins';
+@import 'ngx-lib/src/core/style/abstracts/variables';
 
+#previewArea{
+    box-shadow: var(--pep-shadow-md-offset, 0 0.5rem 1rem 0) hsla(var(--pep-color-system-primary-h, 0), var(--pep-color-system-primary-s, 0%), var(--pep-color-system-primary-l, 10%), 0.08);
+    padding: 1rem;
+    border-radius: var(--pep-border-radius-lg);
+  }
+  ::ng-deep {
 
-.table-content{
-    height: 200px;
-    overflow-y: auto;
-
-
-}
-
-:host ::ng-deep pep-list {
-    .table-header {
-        top: 0 !important;
+    .pep-side-bar-container {
+        height: inherit!important;
     }
-}
-
+  }

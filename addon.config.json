@@ -1,6 +1,6 @@
 {
-  "AddonUUID": "800baf79-3176-4f43-b925-60a91616f36e",
-  "AddonVersion": "0.0.1",
+  "AddonUUID": "00000000-0000-0000-0000-0da1a0de41e5",
+  "AddonVersion": "0.0.16",
   "DebugPort": 4500,
   "WebappBaseUrl": "https://app.sandbox.pepperi.com",
   "DefaultEditor": "main",
@@ -20,9 +20,9 @@
     "ClientStack": "ng10",
     "Editors": [
       {
-        "ParentPackageName": "CHANGE_TO_ADDON_CONTAINER_NAME",
-        "PackageName": "CHANGE_TO_ADDON_PATH",
-        "Description": "CHANGE_TO_ADDON_DESCRIPTION"
+        "ParentPackageName": "Queries",
+        "PackageName": "queries",
+        "Description": "Data queries"
       }
     ],
     "Dependencies": {},

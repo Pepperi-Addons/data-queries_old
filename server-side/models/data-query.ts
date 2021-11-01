@@ -24,16 +24,15 @@ export interface Serie {
     AggregatedFields: AggregatedField[];
     Interval?: number;
     IntervalUnit?: IntervalUnit;
-    BreakBy:
-    {
+    BreakBy: BreakBy;
+}
+
+
+export interface BreakBy extends GroupBy {
+    Top: {
         FieldID: string,
-        Interval: number,
-        IntervalUnit: IntervalUnit,
-        Top: {
-            FieldID: string,
-            Max: number,
-            Ascending: boolean,
-        }
+        Max: number,
+        Ascending: boolean,
     }
 }
 
@@ -43,20 +42,20 @@ export interface AggregatedField {
     Alias?: string
 }
 
-export declare const UserTypes: readonly ["Current" , "UnderMyRole" ,"All"];
+export declare const UserTypes: readonly ["Current", "UnderMyRole", "All"];
 export declare type UserType = typeof UserTypes[number];
 
 export declare const AccountTypes: readonly ["Assigned", "All"];
 export declare type AccountType = typeof AccountTypes[number];
 
-export declare const ResourceTypes: readonly ["all_activities","transactions", "transaction_lines"];
+export declare const ResourceTypes: readonly ["all_activities", "transaction_lines"];
 export declare type ResourceType = typeof ResourceTypes[number];
 
 export declare const DataTypes: readonly ["Single", "Series", "MultiSeries"];
 export declare type DataType = typeof DataTypes[number];
 
 export declare const IntervalUnits: readonly ["Days", "Weeks", "Months", "Years"];
-export declare type IntervalUnit= typeof IntervalUnits[number];
+export declare type IntervalUnit = typeof IntervalUnits[number];
 
 export declare const Aggregators: readonly ["Sum", "Count", "Average"];
 export declare type Aggregator = typeof Aggregators[number];

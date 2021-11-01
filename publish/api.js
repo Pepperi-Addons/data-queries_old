@@ -82853,8 +82853,8 @@ uuid.v4 = v4_1;
 
 var C__Users_hadar_l_Documents_New_Framwork_Hadar_Tests_dataQueries_serverSide_node_modules_uuid = uuid;
 
-var AddonUUID = "800baf79-3176-4f43-b925-60a91616f36e";
-var AddonVersion = "0.0.1";
+var AddonUUID = "00000000-0000-0000-0000-0da1a0de41e5";
+var AddonVersion = "0.0.15";
 var DebugPort = 4500;
 var WebappBaseUrl = "https://app.sandbox.pepperi.com";
 var DefaultEditor = "main";
@@ -82874,9 +82874,9 @@ var PublishConfig = {
 	ClientStack: "ng10",
 	Editors: [
 		{
-			ParentPackageName: "CHANGE_TO_ADDON_CONTAINER_NAME",
-			PackageName: "CHANGE_TO_ADDON_PATH",
-			Description: "CHANGE_TO_ADDON_DESCRIPTION"
+			ParentPackageName: "Queries",
+			PackageName: "queries",
+			Description: "Data queries"
 		}
 	],
 	Dependencies: {
@@ -84755,7 +84755,10 @@ const QueriesScheme = {
         },
         "Hidden": {
             "type": "boolean"
-        }
+        },
+        "Key": {
+            "type": "string"
+        },
     },
     "required": [
         "Resource",

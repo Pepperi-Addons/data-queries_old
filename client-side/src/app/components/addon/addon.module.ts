@@ -1,20 +1,23 @@
 import { MatCardModule } from '@angular/material/card';
-import { PepListModule } from '@pepperi-addons/ngx-lib/list';
 import { AddonService } from './addon.service';
-import { PepTopBarModule } from '@pepperi-addons/ngx-lib/top-bar';
 // import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { TranslateLoader, TranslateModule, TranslateService, TranslateStore } from '@ngx-translate/core';
 import { MultiTranslateHttpLoader } from 'ngx-translate-multi-http-loader';
-import { PepSelectModule } from '@pepperi-addons/ngx-lib/select';
-import { PepButtonModule } from '@pepperi-addons/ngx-lib/button';
-import { PepHttpService, PepFileService, PepNgxLibModule, PepAddonService, PepCustomizationService } from '@pepperi-addons/ngx-lib';
+import { PepFieldTitleModule } from '@pepperi-addons/ngx-lib/field-title';
 import { AddonComponent } from './index';
 import {PepperiTableComponent} from './pepperi-table.component'
 import { MatDialogModule } from '@angular/material/dialog';
 import { PepDialogService } from '@pepperi-addons/ngx-lib/dialog';
+import { PepAddonService, PepCustomizationService, PepFileService, PepHttpService } from '@pepperi-addons/ngx-lib';
+import { PepSelectModule } from '@pepperi-addons/ngx-lib/select';
+import { PepPageLayoutModule } from '@pepperi-addons/ngx-lib/page-layout';
+import { PepSideBarModule } from '@pepperi-addons/ngx-lib/side-bar';
+import { PepTopBarModule } from '@pepperi-addons/ngx-lib/top-bar';
+import { PepListModule } from '@pepperi-addons/ngx-lib/list';
+import { PepAttachmentModule } from '@pepperi-addons/ngx-lib/attachment';
 
 export function createTranslateLoader(http: HttpClient, fileService: PepFileService, addonService: PepAddonService) {
     const translationsPath: string = fileService.getAssetsTranslationsPath();
@@ -46,9 +49,13 @@ export function createTranslateLoader(http: HttpClient, fileService: PepFileServ
     ],
     imports: [
         CommonModule,
+        PepPageLayoutModule,
+        PepSideBarModule,
         HttpClientModule,
         MatDialogModule,
         MatCardModule,
+        PepFieldTitleModule,
+        PepAttachmentModule,
         //// When not using module as sub-addon please remark this for not loading twice resources
         TranslateModule.forChild({
             loader: {
@@ -58,8 +65,8 @@ export function createTranslateLoader(http: HttpClient, fileService: PepFileServ
             }, isolate: false
         }),
         //// Example for importing tree-shakeable @pepperi-addons/ngx-lib components to a module
-        PepNgxLibModule,
-        PepButtonModule,
+        // PepNgxLibModule,
+        // PepButtonModule,
         PepSelectModule,
         PepTopBarModule,
         PepListModule

@@ -15,7 +15,7 @@ const routes: Routes = [
         path: `settings/:addon_uuid`,
         children: [
             {
-                path: ':editor',
+                path: ':queries',
                 component: AddonComponent
                 // TODO: solve routing
                 // loadChildren: () => import('./components/addon/index').then(m => m.AddonModule)
