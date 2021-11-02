@@ -2,14 +2,14 @@
 <pep-page-layout>
 
     <pep-side-bar #sideBar [ignoreResize]="true">
-        <pep-select [key]="'chartSelect'" [label]="'Charts'" [xAlignment]="'left'" [options]='chartsOptions' (valueChange)="onChartSelected($event)">
+        <pep-select [key]="'chartSelect'" [label]="'Select a chart'" [xAlignment]="'left'" [options]='chartsOptions' (valueChange)="onChartSelected($event)">
         </pep-select>
-        <pep-select [key]="'querySelect'" [label]="'Data Queries'" [xAlignment]="'left'" [options]='queriesOptions' (valueChange)="onDataQuerySelected($event)">
+        <pep-select [key]="'querySelect'" [label]="'Select a data query'" [xAlignment]="'left'" [options]='queriesOptions' (valueChange)="onDataQuerySelected($event)">
         </pep-select>
     </pep-side-bar>
 
     <ng-container pep-top-area>
-        <pep-top-bar>
+        <pep-top-bar [title]="'DataVisualization' | translate">
             <div header-start-content>
             </div>
             <div footer-start-content>
@@ -19,9 +19,12 @@
         </pep-top-bar>
     </ng-container>
     <ng-container pep-main-area>
-        <pep-field-title class="body-xs title" [label]="'Preview'" class="header">
-        </pep-field-title>
-        <div id="previewArea">
+        <div style="width: 60rem;margin-left: 1rem; margin-top: 1rem;">
+            <pep-field-title class="body-xs title" *ngIf="this.chartInstance" [label]="'Preview' | translate" class="header">
+            </pep-field-title>
+            <!-- <label [hidden]="!this.chartInstance">{{'Preview' | translate}}</label> -->
+            <div [hidden]="!this.chartInstance" id="previewArea">
+            </div>
         </div>
     </ng-container>
 </pep-page-layout>

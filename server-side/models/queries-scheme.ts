@@ -4,8 +4,8 @@ export const QueriesScheme =
     "properties": {
         "Resource": {
             "type": "string",
-            "enum": ["all_activities","transactions", "transaction_lines"]
-            
+            "enum": ["all_activities", "transactions", "transaction_lines"]
+
         },
         "Type": {
             "type": "string",
@@ -34,6 +34,7 @@ export const QueriesScheme =
                                     "enum": ["Sum", "Count", "Average"]
                                 }
                             },
+                            "additionalProperties": false,
                             "required": [
                                 "FieldID",
                                 "Aggregator"
@@ -52,14 +53,31 @@ export const QueriesScheme =
                             "IntervalUnit": {
                                 "type": "string",
                                 "enum": ["Days", "Weeks", "Months", "Years"]
+                            },
+                            "Top": {
+                                "type": "object",
+                                "properties": {
+                                    "FieldID": {
+                                        "type": "string"
+                                    },
+                                    "Max": {
+                                        "type": "integer",
+                                        "maximum": 100
+                                    },
+                                    "Ascending": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "additionalProperties": false
                             }
                         },
+                        "additionalProperties": false,
                         "required": [
                             "FieldID"
                         ]
                     },
                     "Scope": {
-                        "type": "oblect",
+                        "type": "object",
                         "properties": {
                             "Account": {
                                 "type": "string",
@@ -67,19 +85,30 @@ export const QueriesScheme =
                             },
                             "User": {
                                 "type": "string",
-                                "enum":  ["Current", "UnderMyRole", "All"]
+                                "enum": ["Current", "UnderMyRole", "All"]
                             }
+                        },
+                        "additionalProperties": false,
+                    },
+                    "DynamicFilterFields":{
+                        "type": "array",
+                        "items":{
+                            "type":"string"
                         }
+                    },
+                    "Filter":{
+                        "type":"object"
                     }
                 },
+                "additionalProperties": false,
                 "required": [
                     "AggregatedFields"
                 ]
             }
         },
         "GroupBy": {
-            "type":"array",
-            "items":{   
+            "type": "array",
+            "items": {
                 "type": "object",
                 "properties": {
                     "FieldID": {
@@ -91,21 +120,44 @@ export const QueriesScheme =
                     "IntervalUnit": {
                         "type": "string",
                         "enum": ["Days", "Weeks", "Months", "Years"]
+                    },
+                    "Top": {
+                        "type": "object",
+                        "properties": {
+                            "FieldID": {
+                                "type": "string"
+                            },
+                            "Max": {
+                                "type": "integer",
+                                "maximum": 100
+                            },
+                            "Ascending": {
+                                "type": "Ascending"
+                            }
+                        },
+                        "additionalProperties": false
                     }
-                }
+                },
+                "additionalProperties": false
             }
         },
-        "ModificationDateTime":{
-            "type":"string"
+        "ModificationDateTime": {
+            "type": "string"
         },
-        "CreationDateTime":{
-            "type":"string"
+        "CreationDateTime": {
+            "type": "string"
         },
-        "Hidden":{
-            "type":"boolean"
+        "Hidden": {
+            "type": "boolean"
         },
-        "Key":{
-            "type":"string"
+        "Key": {
+            "type": "string"
+        },
+        "Name": {
+            "type": "string"
+        },
+        "Description": {
+            "type": "string"
         },
     },
     "required": [
@@ -114,6 +166,6 @@ export const QueriesScheme =
         "Series"
     ],
     "additionalProperties": false
-    
+
 }
 

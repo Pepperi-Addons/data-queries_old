@@ -9,7 +9,7 @@ import { QueriesScheme } from '../models/queries-scheme';
 class QueryService {
 
     papiClient: PapiClient
-
+    
     constructor(private client: Client) {
         this.papiClient = new PapiClient({
             baseURL: client.BaseURL,
@@ -23,8 +23,8 @@ class QueryService {
 
         const adal = this.papiClient.addons.data.uuid(config.AddonUUID).table(DATA_QUREIES_TABLE_NAME);
         const body = request.body;
-        
-        const validation = validate(body, QueriesScheme,{allowUnknownAttributes:false,});
+
+        const validation = validate(body, QueriesScheme, { allowUnknownAttributes: false, });
 
         if (!validation.valid) {
             throw new Error(validation.toString());

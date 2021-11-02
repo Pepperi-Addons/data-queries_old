@@ -5,6 +5,8 @@ export interface DataQuery extends AddonData {
     Resource: ResourceType,
     Type: DataType,
     GroupBy?: GroupBy[],
+    Name: string;
+    Description?: string;
     Series: Serie[],
     DynamicFilterFields: [],
     Filter: {},
@@ -18,6 +20,7 @@ export interface GroupBy {
     FieldID: string;
     Interval?: number;
     IntervalUnit?: IntervalUnit;
+    Top: Top;
 }
 
 export interface Serie {
@@ -29,13 +32,13 @@ export interface Serie {
 
 
 export interface BreakBy extends GroupBy {
-    Top: {
-        FieldID: string,
-        Max: number,
-        Ascending: boolean,
-    }
+    Top: Top;
 }
-
+export interface Top {
+    FieldID: string,
+    Max: number,
+    Ascending: boolean,
+}
 export interface AggregatedField {
     FieldID: string,
     Aggregator: Aggregator,

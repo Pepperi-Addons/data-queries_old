@@ -82854,7 +82854,7 @@ uuid.v4 = v4_1;
 var C__Users_hadar_l_Documents_New_Framwork_Hadar_Tests_dataQueries_serverSide_node_modules_uuid = uuid;
 
 var AddonUUID = "00000000-0000-0000-0000-0da1a0de41e5";
-var AddonVersion = "0.0.15";
+var AddonVersion = "0.0.21";
 var DebugPort = 4500;
 var WebappBaseUrl = "https://app.sandbox.pepperi.com";
 var DefaultEditor = "main";
@@ -84686,6 +84686,7 @@ const QueriesScheme = {
                                     "enum": ["Sum", "Count", "Average"]
                                 }
                             },
+                            "additionalProperties": false,
                             "required": [
                                 "FieldID",
                                 "Aggregator"
@@ -84704,14 +84705,31 @@ const QueriesScheme = {
                             "IntervalUnit": {
                                 "type": "string",
                                 "enum": ["Days", "Weeks", "Months", "Years"]
+                            },
+                            "Top": {
+                                "type": "object",
+                                "properties": {
+                                    "FieldID": {
+                                        "type": "string"
+                                    },
+                                    "Max": {
+                                        "type": "integer",
+                                        "maximum": 100
+                                    },
+                                    "Ascending": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "additionalProperties": false
                             }
                         },
+                        "additionalProperties": false,
                         "required": [
                             "FieldID"
                         ]
                     },
                     "Scope": {
-                        "type": "oblect",
+                        "type": "object",
                         "properties": {
                             "Account": {
                                 "type": "string",
@@ -84721,9 +84739,20 @@ const QueriesScheme = {
                                 "type": "string",
                                 "enum": ["Current", "UnderMyRole", "All"]
                             }
+                        },
+                        "additionalProperties": false,
+                    },
+                    "DynamicFilterFields": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
                         }
+                    },
+                    "Filter": {
+                        "type": "object"
                     }
                 },
+                "additionalProperties": false,
                 "required": [
                     "AggregatedFields"
                 ]
@@ -84743,8 +84772,25 @@ const QueriesScheme = {
                     "IntervalUnit": {
                         "type": "string",
                         "enum": ["Days", "Weeks", "Months", "Years"]
+                    },
+                    "Top": {
+                        "type": "object",
+                        "properties": {
+                            "FieldID": {
+                                "type": "string"
+                            },
+                            "Max": {
+                                "type": "integer",
+                                "maximum": 100
+                            },
+                            "Ascending": {
+                                "type": "Ascending"
+                            }
+                        },
+                        "additionalProperties": false
                     }
-                }
+                },
+                "additionalProperties": false
             }
         },
         "ModificationDateTime": {
@@ -84757,6 +84803,12 @@ const QueriesScheme = {
             "type": "boolean"
         },
         "Key": {
+            "type": "string"
+        },
+        "Name": {
+            "type": "string"
+        },
+        "Description": {
             "type": "string"
         },
     },

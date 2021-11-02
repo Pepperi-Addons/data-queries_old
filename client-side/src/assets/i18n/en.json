@@ -6,6 +6,9 @@
     "Title_Sub_Addon": "Hello Sub Addon",
     "Open_Dialog": "Open Dialog",
     "Dialog_Body": "Dialog from sub addon",
-    "Dialog_Title": "Dialog"
+    "Dialog_Title": "Dialog",
+    "FailedExecuteFile": "Failed to execute the file content",
+    "FailedLoadLibrary": "Failed to load library: {{library}}",
+    "DataVisualization": "Data Visualization"
 
 }

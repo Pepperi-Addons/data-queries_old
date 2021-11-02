@@ -82682,7 +82682,7 @@ __exportStar(papiClient, exports);
 var index = unwrapExports(dist$1);
 
 var AddonUUID = "00000000-0000-0000-0000-0da1a0de41e5";
-var AddonVersion = "0.0.15";
+var AddonVersion = "0.0.21";
 var DebugPort = 4500;
 var WebappBaseUrl = "https://app.sandbox.pepperi.com";
 var DefaultEditor = "main";
@@ -112882,14 +112882,29 @@ var dist_1 = dist.callElasticSearchLambda;
 
 function e(e){this.message=e;}e.prototype=new Error,e.prototype.name="InvalidCharacterError";var r="undefined"!=typeof window&&window.atob&&window.atob.bind(window)||function(r){var t=String(r).replace(/=+$/,"");if(t.length%4==1)throw new e("'atob' failed: The string to be decoded is not correctly encoded.");for(var n,o,a=0,i=0,c="";o=t.charAt(i++);~o&&(n=a%4?64*n+o:o,a++%4)?c+=String.fromCharCode(255&n>>(-2*a&6)):0)o="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".indexOf(o);return c};function t(e){var t=e.replace(/-/g,"+").replace(/_/g,"/");switch(t.length%4){case 0:break;case 2:t+="==";break;case 3:t+="=";break;default:throw "Illegal base64url string!"}try{return function(e){return decodeURIComponent(r(e).replace(/(.)/g,(function(e,r){var t=r.charCodeAt(0).toString(16).toUpperCase();return t.length<2&&(t="0"+t),"%"+t})))}(t)}catch(e){return r(t)}}function n(e){this.message=e;}function o(e,r){if("string"!=typeof e)throw new n("Invalid token specified");var o=!0===(r=r||{}).header?0:1;try{return JSON.parse(t(e.split(".")[o]))}catch(e){throw new n("Invalid token specified: "+e.message)}}n.prototype=new Error,n.prototype.name="InvalidTokenError";
 
+class DataQueryResponse {
+    constructor() {
+        this.Groups = [];
+        this.Series = [];
+        this.DataSet = [];
+    }
+}
+
 class ElasticService {
     constructor(client) {
         this.client = client;
+        this.MaxAggregationSize = 100;
         this.intervalUnitMap = {
             Days: 'd',
             Weeks: 'w',
             Months: 'M',
             Years: 'y',
+        };
+        this.intervalUnitFormat = {
+            Days: 'dd',
+            Weeks: 'MM-dd',
+            Months: 'MM',
+            Years: 'yyyy',
         };
         this.papiClient = new index.PapiClient({
             baseURL: client.BaseURL,
@@ -112908,83 +112923,363 @@ class ElasticService {
         let elasticRequestBody = new lib.RequestBodySearch().size(0);
         // filter by type
         elasticRequestBody.query(lib.boolQuery().must(lib.matchQuery('ElasticSearchType', query.Resource)));
-        let a = [];
+        let aggregations = [];
         // filter by scoped account
-        //elasticRequestBody.agg(esb.termsAggregation('AccountExternalID', 'Account.ExternalID').include(accountsExternalIDs));
         if (query.GroupBy) {
             query.GroupBy.forEach(groupBy => {
-                if (groupBy.IntervalUnit) {
-                    const calenderInterval = `${groupBy.Interval}${this.intervalUnitMap[groupBy.IntervalUnit]}`;
-                    a.push(lib.dateHistogramAggregation(groupBy.FieldID, groupBy.FieldID).calendarInterval(calenderInterval).format("yyyy"));
-                }
-                else {
-                    a.push(lib.termsAggregation(groupBy.FieldID, `${groupBy.FieldID}.keyword`));
-                }
+                aggregations.push(this.buildAggregationQuery(groupBy, aggregations));
             });
         }
         // handle aggregation by series
         for (const serie of query.Series) {
             // handle aggregation by break by
-            if (serie.IntervalUnit) {
-                const calenderInterval = `${serie.BreakBy.Interval}${this.intervalUnitMap[serie.BreakBy.IntervalUnit]}`;
-                a.push(lib.dateHistogramAggregation(serie.BreakBy.FieldID, serie.BreakBy.FieldID).calendarInterval(calenderInterval).format("yyyy"));
-            }
-            else {
-                a.push(lib.termsAggregation(serie.BreakBy.FieldID, `${serie.BreakBy.FieldID}.keyword`));
-            }
+            aggregations.push(this.buildAggregationQuery(serie.BreakBy, aggregations));
             for (const aggregatedField of serie.AggregatedFields) {
                 let agg = this.getAggregator(aggregatedField);
-                a.push(agg);
+                aggregations.push(agg);
                 //elasticRequestBody.agg(agg);
             }
         }
-        let temp = null;
-        for (let i = a.length - 1; i >= 0; i--) {
-            if (i === a.length - 1) {
-                temp = a[i];
-            }
-            else {
-                temp = a[i].agg(temp);
-            }
-        }
-        elasticRequestBody.agg(temp);
+        // build nested aggregations from array of aggregations
+        let aggs = this.buildNestedAggregations(aggregations);
+        elasticRequestBody.agg(aggs);
         const body = elasticRequestBody.toJSON();
         console.log(`lambdaBody: ${JSON.stringify(body)}`);
         const lambdaResponse = await dist_1(endpoint, method, JSON.stringify(body), null, true);
         console.log(`lambdaResponse: ${JSON.stringify(lambdaResponse)}`);
-        let response = {
-            DataSet: [],
-            Groups: [],
-            Series: []
-        };
-        Object.keys(lambdaResponse.resultObject.aggregations).forEach(function (key) {
-            response.Groups.push(key);
-            lambdaResponse.resultObject.aggregations[key].buckets.forEach(bucket => {
+        if (!lambdaResponse.success) {
+            console.log(`Failed to execute data query ID: ${query.Key}, lambdaBody: ${JSON.stringify(body)}`);
+            throw new Error(`Failed to execute data query ID: ${query.Key}`);
+        }
+        // const lambdaResponse = {
+        //     resultObject: null
+        // };
+        let response = this.buildResponseFromElasticResults(lambdaResponse.resultObject, query);
+        return response;
+    }
+    buildResponseFromElasticResults(lambdaResponse, query) {
+        // lambdaResponse = {
+        //     "aggregations" : {
+        //         "Item.MainCategory" : {
+        //           "doc_count_error_upper_bound" : 0,
+        //           "sum_other_doc_count" : 14774530,
+        //           "buckets" : [
+        //             {
+        //               "key" : "28 Celsius",
+        //               "doc_count" : 21,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 16,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 338.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 5,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 23.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Abacus Cards",
+        //               "doc_count" : 947,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 298,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 1445.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 649,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 3162.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "All Joy Designs",
+        //               "doc_count" : 2,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 2,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 2.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Archivist",
+        //               "doc_count" : 19,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 19,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 60.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "ArtPress",
+        //               "doc_count" : 721,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 563,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 3317.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 158,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 664.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Belly Button",
+        //               "doc_count" : 1882,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 1554,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 7360.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 328,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 1689.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Black Olive",
+        //               "doc_count" : 164,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 9,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 44.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 155,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 849.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Blue Eyed Sun",
+        //               "doc_count" : 4064,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 2247,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 7549.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 1817,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 8011.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Bluebell 33",
+        //               "doc_count" : 1823,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 772,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 4668.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 1051,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 5693.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Box",
+        //               "doc_count" : 1644329,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 1227128,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 3.5572682E7
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 417201,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 1.2965525E7
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             }
+        //           ]
+        //         }
+        //       }
+        // }
+        let response = new DataQueryResponse();
+        Object.keys(lambdaResponse.aggregations).forEach((key) => {
+            // remove the dots since chart js doesnt support it
+            const keyString = this.cutDotNotation(key);
+            response.Groups.push(keyString);
+            lambdaResponse.aggregations[key].buckets.forEach(bucket => {
                 let dataSet = {};
-                dataSet[key] = bucket[`key_as_string`];
-                bucket[query.Series[0].BreakBy.FieldID].buckets.forEach(bucket2 => {
-                    const key = bucket2['key_as_string'] ? bucket2['key_as_string'] : bucket2.key;
-                    if (response.Series.indexOf(key) == -1) {
-                        response.Series.push(key);
-                    }
-                    dataSet[key] = bucket2.res.value;
+                const keyName = this.getKeyAggregationName(bucket);
+                dataSet[keyString] = keyName;
+                query.Series.forEach(series => {
+                    bucket[series.BreakBy.FieldID].buckets.forEach(serieBucket => {
+                        series.AggregatedFields.forEach(aggregationField => {
+                            const keyName = this.getKeyAggregationName(serieBucket);
+                            const keyString = this.cutDotNotation(keyName);
+                            // if the series already exists in series - dont add it
+                            if (response.Series.indexOf(keyString) == -1) {
+                                response.Series.push(keyString);
+                            }
+                            const aggName = this.buildAggragationFieldString(aggregationField);
+                            dataSet[keyString] = serieBucket[aggName].value;
+                        });
+                    });
+                    response.DataSet.push(dataSet);
                 });
-                response.DataSet.push(dataSet);
             });
         });
         return response;
     }
+    cutDotNotation(key) {
+        return key.split('.').join("");
+    }
+    getKeyAggregationName(bucket) {
+        // in cate of histogram aggregation we want the key as data and not timestamp
+        return bucket['key_as_string'] ? bucket['key_as_string'] : bucket.key;
+    }
+    buildNestedAggregations(aggregations) {
+        let aggs = null;
+        for (let i = aggregations.length - 1; i >= 0; i--) {
+            if (i === aggregations.length - 1) {
+                aggs = aggregations[i];
+            }
+            else {
+                aggs = aggregations[i].agg(aggs);
+            }
+        }
+        return aggs;
+    }
+    // build sggregation - if the type field is date time build dateHistogramAggregation else termsAggregation
+    buildAggregationQuery(groupBy, sggregations) {
+        var _a;
+        // Maximum size of each aggregation is 100
+        const topAggs = ((_a = groupBy.Top) === null || _a === void 0 ? void 0 : _a.Max) ? groupBy.Top.Max : this.MaxAggregationSize;
+        // there is a There is a difference between data histogram aggregation and terms aggregation. 
+        // data histogram aggregation has no size.
+        // This aggregation is already selective in the sense that the number of buckets is manageable through the interval 
+        // so it is necessary to do nested aggregation to get size buckets
+        const isDateHistogramAggregation = groupBy.IntervalUnit && groupBy.Interval;
+        let query;
+        if (isDateHistogramAggregation) {
+            const calenderInterval = `${groupBy.Interval}${this.intervalUnitMap[groupBy.IntervalUnit]}`;
+            query = lib.dateHistogramAggregation(groupBy.FieldID, groupBy.FieldID).calendarInterval(calenderInterval).format(this.intervalUnitFormat[groupBy.IntervalUnit]);
+        }
+        else {
+            query = lib.termsAggregation(groupBy.FieldID, `${groupBy.FieldID}.keyword`);
+        }
+        //Handle the sorting
+        //query.order('_key', groupBy.Top?.Ascending ? 'asc' : 'desc');
+        // nested aggregation to get size buckets
+        if (isDateHistogramAggregation) {
+            query.aggs([lib.bucketSortAggregation('Top').size(topAggs)]);
+        }
+        return query;
+    }
+    buildAggragationFieldString(aggregatedField) {
+        return `${aggregatedField.FieldID}_${aggregatedField.Aggregator}`;
+    }
     getAggregator(aggregatedField) {
         let agg;
+        const aggName = this.buildAggragationFieldString(aggregatedField);
         switch (aggregatedField.Aggregator) {
             case 'Sum':
-                agg = lib.sumAggregation('res', aggregatedField.FieldID);
+                agg = lib.sumAggregation(aggName, aggregatedField.FieldID);
                 break;
             case 'Count':
-                agg = lib.valueCountAggregation('res', aggregatedField.FieldID);
+                agg = lib.valueCountAggregation(aggName, aggregatedField.FieldID);
                 break;
             case 'Average':
-                agg = lib.avgAggregation('res', aggregatedField.FieldID);
+                agg = lib.avgAggregation(aggName, aggregatedField.FieldID);
                 break;
         }
         return agg;

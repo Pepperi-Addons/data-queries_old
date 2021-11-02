@@ -5,7 +5,7 @@ import config from '../../addon.config.json'
 import { AggregatedField, DataQuery, DataTypes, DATA_QUREIES_TABLE_NAME, GroupBy, IntervalUnit, IntervalUnits, Serie } from '../models/data-query';
 import { validate } from 'jsonschema';
 import { QueriesScheme } from '../models/queries-scheme';
-import esb, { Aggregation, DateHistogramAggregation, dateHistogramAggregation, dateRangeAggregation, Query, termQuery } from 'elastic-builder';
+import esb, { Aggregation, DateHistogramAggregation, dateHistogramAggregation, dateRangeAggregation, maxBucketAggregation, Query, termQuery } from 'elastic-builder';
 import { callElasticSearchLambda } from '@pepperi-addons/system-addon-utils';
 import jwtDecode from 'jwt-decode';
 import { DataQueryResponse } from '../models/data-query-response';
@@ -14,6 +14,16 @@ import { DataQueryResponse } from '../models/data-query-response';
 class ElasticService {
 
     papiClient: PapiClient;
+
+    constructor(private client: Client) {
+        this.papiClient = new PapiClient({
+            baseURL: client.BaseURL,
+            token: client.OAuthAccessToken,
+            addonUUID: client.AddonUUID,
+            addonSecretKey: client.AddonSecretKey
+        });
+    }
+    MaxAggregationSize = 100;
 
     intervalUnitMap: { [key in IntervalUnit]: string } = {
         Days: 'd',
@@ -27,15 +37,6 @@ class ElasticService {
         Weeks: 'MM-dd',
         Months: 'MM',
         Years: 'yyyy',
-    }
-
-    constructor(private client: Client) {
-        this.papiClient = new PapiClient({
-            baseURL: client.BaseURL,
-            token: client.OAuthAccessToken,
-            addonUUID: client.AddonUUID,
-            addonSecretKey: client.AddonSecretKey
-        });
     }
 
     async executeUserDefinedQuery(client: Client, request: Request) {
@@ -79,208 +80,279 @@ class ElasticService {
         const body = elasticRequestBody.toJSON();
         console.log(`lambdaBody: ${JSON.stringify(body)}`);
 
-        //const lambdaResponse = await callElasticSearchLambda(endpoint, method, JSON.stringify(body), null, true);
-        // console.log(`lambdaResponse: ${JSON.stringify(lambdaResponse)}`);
+        const lambdaResponse = await callElasticSearchLambda(endpoint, method, JSON.stringify(body), null, true);
+        console.log(`lambdaResponse: ${JSON.stringify(lambdaResponse)}`);
 
-        // if (!lambdaResponse.success) {
-        //     console.log(`Failed to execute data query ID: ${query.Key}, lambdaBody: ${JSON.stringify(body)}`)
-        //     throw new Error(`Failed to execute data query ID: ${query.Key}`);
-        // }
-
-        let response: DataQueryResponse = this.buildResponseFromElasticResults(null, query);
+        if (!lambdaResponse.success) {
+            console.log(`Failed to execute data query ID: ${query.Key}, lambdaBody: ${JSON.stringify(body)}`)
+            throw new Error(`Failed to execute data query ID: ${query.Key}`);
+        }
+        // const lambdaResponse = {
+        //     resultObject: null
+        // };
+        let response: DataQueryResponse = this.buildResponseFromElasticResults(lambdaResponse.resultObject, query);
 
         return response;
     }
 
     private buildResponseFromElasticResults(lambdaResponse, query: DataQuery) {
 
-        lambdaResponse = {
-            "aggregations": {
-                "Transaction.ActionDateTime": {
-                    "buckets": [
-                        {
-                            "key_as_string": "2018",
-                            "key": 1514764800000,
-                            "doc_count": 7133021,
-                            "Item.MainCategory": {
-                                "doc_count_error_upper_bound": 2941,
-                                "sum_other_doc_count": 106658,
-                                "buckets": [
-                                    {
-                                        "key": "Pocket",
-                                        "doc_count": 5378821,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 41341803.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Hallmark",
-                                        "doc_count": 978372,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 4180953.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Box",
-                                        "doc_count": 417201,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 12965525.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Tesco",
-                                        "doc_count": 125464,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 829635.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Waitrose",
-                                        "doc_count": 36452,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 420233.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Danillo",
-                                        "doc_count": 26058,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 137353.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Morrisons",
-                                        "doc_count": 19776,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 170668.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Tailormade",
-                                        "doc_count": 17010,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 89371.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Carte Blanche Greetings",
-                                        "doc_count": 14317,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 72968.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Me To You",
-                                        "doc_count": 12365,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 66713.0
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "key_as_string": "2019",
-                            "key": 1546300800000,
-                            "doc_count": 9298518,
-                            "Item.MainCategory": {
-                                "doc_count_error_upper_bound": 3899,
-                                "sum_other_doc_count": 153792,
-                                "buckets": [
-                                    {
-                                        "key": "Pocket",
-                                        "doc_count": 5377363,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 26425553.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Hallmark",
-                                        "doc_count": 2095774,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 12127732.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Box",
-                                        "doc_count": 1227128,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 35572682.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Tesco",
-                                        "doc_count": 194520,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 982884.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Morrisons",
-                                        "doc_count": 107618,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 1486518.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Waitrose",
-                                        "doc_count": 41994,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 215629.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Me To You",
-                                        "doc_count": 30175,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 362776.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Danillo",
-                                        "doc_count": 26204,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 149810.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Emotional Rescue",
-                                        "doc_count": 21241,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 227876.0
-                                        }
-                                    },
-                                    {
-                                        "key": "Carte Blanche Greetings",
-                                        "doc_count": 20199,
-                                        "UnitsQuantity_Sum": {
-                                            "value": 218149.0
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            }
-        }
+        // lambdaResponse = {
+        //     "aggregations" : {
+        //         "Item.MainCategory" : {
+        //           "doc_count_error_upper_bound" : 0,
+        //           "sum_other_doc_count" : 14774530,
+        //           "buckets" : [
+        //             {
+        //               "key" : "28 Celsius",
+        //               "doc_count" : 21,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 16,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 338.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 5,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 23.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Abacus Cards",
+        //               "doc_count" : 947,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 298,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 1445.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 649,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 3162.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "All Joy Designs",
+        //               "doc_count" : 2,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 2,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 2.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Archivist",
+        //               "doc_count" : 19,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 19,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 60.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "ArtPress",
+        //               "doc_count" : 721,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 563,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 3317.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 158,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 664.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Belly Button",
+        //               "doc_count" : 1882,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 1554,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 7360.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 328,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 1689.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Black Olive",
+        //               "doc_count" : 164,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 9,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 44.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 155,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 849.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Blue Eyed Sun",
+        //               "doc_count" : 4064,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 2247,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 7549.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 1817,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 8011.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Bluebell 33",
+        //               "doc_count" : 1823,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 772,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 4668.0
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 1051,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 5693.0
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             },
+        //             {
+        //               "key" : "Box",
+        //               "doc_count" : 1644329,
+        //               "Transaction.ActionDateTime" : {
+        //                 "buckets" : [
+        //                   {
+        //                     "key_as_string" : "2019",
+        //                     "key" : 1546300800000,
+        //                     "doc_count" : 1227128,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 3.5572682E7
+        //                     }
+        //                   },
+        //                   {
+        //                     "key_as_string" : "2018",
+        //                     "key" : 1514764800000,
+        //                     "doc_count" : 417201,
+        //                     "UnitsQuantity_Sum" : {
+        //                       "value" : 1.2965525E7
+        //                     }
+        //                   }
+        //                 ]
+        //               }
+        //             }
+        //           ]
+        //         }
+        //       }
+        // }
         let response: DataQueryResponse = new DataQueryResponse();
 
-        Object.keys(lambdaResponse.aggregations).forEach( (key) => {
-            response.Groups.push(key);
+        Object.keys(lambdaResponse.aggregations).forEach((key) => {
+            // remove the dots since chart js doesnt support it
+            const keyString = this.cutDotNotation(key);
+            response.Groups.push(keyString);
             lambdaResponse.aggregations[key].buckets.forEach(bucket => {
                 let dataSet = {};
-                dataSet[key] = bucket[`key_as_string`];
+                const keyName = this.getKeyAggregationName(bucket);
+                dataSet[keyString] = keyName;
                 query.Series.forEach(series => {
                     bucket[series.BreakBy.FieldID].buckets.forEach(serieBucket => {
                         series.AggregatedFields.forEach(aggregationField => {
-                            const key = serieBucket['key_as_string'] ? serieBucket['key_as_string'] : serieBucket.key;
+                            const keyName = this.getKeyAggregationName(serieBucket);;
+                            const keyString = this.cutDotNotation(keyName);
+
                             // if the series already exists in series - dont add it
-                            if (response.Series.indexOf(key) == -1) {
-                                response.Series.push(key);
+                            if (response.Series.indexOf(keyString) == -1) {
+                                response.Series.push(keyString);
                             }
                             const aggName = this.buildAggragationFieldString(aggregationField);
-                            dataSet[key] = serieBucket[aggName].value;
+                            dataSet[keyString] = serieBucket[aggName].value;
                         });
                     });
                     response.DataSet.push(dataSet);
@@ -289,6 +361,15 @@ class ElasticService {
 
         });
         return response;
+    }
+
+    private cutDotNotation(key: string) {
+        return key.split('.').join("");
+    }
+
+    private getKeyAggregationName(bucket: any) {
+        // in cate of histogram aggregation we want the key as data and not timestamp
+        return bucket['key_as_string'] ? bucket['key_as_string'] : bucket.key;
     }
 
     private buildNestedAggregations(aggregations: esb.Aggregation[]) {
@@ -305,17 +386,34 @@ class ElasticService {
 
     // build sggregation - if the type field is date time build dateHistogramAggregation else termsAggregation
     private buildAggregationQuery(groupBy: GroupBy, sggregations: esb.Aggregation[]) {
+
+        // Maximum size of each aggregation is 100
+        const topAggs = groupBy.Top?.Max ? groupBy.Top.Max : this.MaxAggregationSize;
+
+        // there is a There is a difference between data histogram aggregation and terms aggregation. 
+        // data histogram aggregation has no size.
+        // This aggregation is already selective in the sense that the number of buckets is manageable through the interval 
+        // so it is necessary to do nested aggregation to get size buckets
+        const isDateHistogramAggregation = groupBy.IntervalUnit && groupBy.Interval;
         let query;
-        if (groupBy.IntervalUnit && groupBy.Interval) {
-            const calenderInterval = `${groupBy.Interval}${this.intervalUnitMap[groupBy.IntervalUnit]}`;
-            query = esb.dateHistogramAggregation(groupBy.FieldID, groupBy.FieldID).calendarInterval(calenderInterval).format(this.intervalUnitFormat[groupBy.IntervalUnit]);
+        if (isDateHistogramAggregation) {
+            const calenderInterval = `${groupBy.Interval}${this.intervalUnitMap[groupBy.IntervalUnit!]}`;
+            query = esb.dateHistogramAggregation(groupBy.FieldID, groupBy.FieldID).calendarInterval(calenderInterval).format(this.intervalUnitFormat[groupBy.IntervalUnit!]);
         } else {
             query = esb.termsAggregation(groupBy.FieldID, `${groupBy.FieldID}.keyword`);
+        }
+
+        //Handle the sorting
+        //query.order('_key', groupBy.Top?.Ascending ? 'asc' : 'desc');
+
+        // nested aggregation to get size buckets
+        if (isDateHistogramAggregation) {
+            query.aggs([esb.bucketSortAggregation('Top').size(topAggs)])
         }
         return query;
     }
 
-    private buildAggragationFieldString(aggregatedField: AggregatedField):string {
+    private buildAggragationFieldString(aggregatedField: AggregatedField): string {
         return `${aggregatedField.FieldID}_${aggregatedField.Aggregator}`
     }
 
