@@ -1,0 +1,72 @@
+<pep-page-layout>
+    <ng-container pep-top-area>
+        <pep-top-bar [title]="('DataQueriesTitle' | translate)">
+            <div header-start-content>
+            </div>
+            <div header-end-content class="pep-spacing-element">
+                <!-- <p class="title-md">{{'Lastupdatedonweekdatetime' | translate}} {{weekNumber}}: {{lastUpdatedDate}}</p> -->
+                <!-- <pep-button class="pep-spacing-element"
+                    value="{{'UpdateAllValues' | translate}}"
+                    styleType="weak"
+                    styleStateType="system"
+                    sizeType="sm"
+                    classNames="title-md"
+                    [disabled]="false"
+                    iconName="system_processing"
+                    iconPosition="end"
+                    [visible]="true"
+                    (buttonClick)="refreshButtonClicked($event)">
+                </pep-button> -->
+            </div>
+        </pep-top-bar>
+    </ng-container>
+    <div pep-main-area>
+        <mat-tab-group #tabGroup [selectedIndex]="activeTabIndex" (selectedTabChange)="tabClick($event)" animationDuration="100ms" class="fixed-header">
+            <mat-tab id="1" label="{{'General' | translate}}">
+                <div style="width: 40rem;">
+                    <pep-select [key]="'chartSelect'" [label]="'Select a chart'" [xAlignment]="'left'" [options]='chartsOptions' (valueChange)="onChartSelected($event)">
+                    </pep-select>
+                    <pep-textbox [label]="'Name' | translate" [type]="'text'" (valueChange)="onValueChanged('Name', $event)"></pep-textbox>
+                </div>
+
+                <!-- <addon-pepperi-list-exmaple [type]="'Data'" [ID]='0' [isActive]="activeTabIndex === 0" [data]="activeTabIndex === 0 ? currentData : null"></addon-pepperi-list-exmaple> -->
+            </mat-tab>
+            <mat-tab id="2" label="{{'Content' | translate}}">
+                <div style="width: 40rem;">
+                    <pep-select [key]="'resourceSelect'" [label]="'Select a resource'" [xAlignment]="'left'" [options]='resourceOptions' (valueChange)="onChartSelected($event)">
+                    </pep-select>
+                    <h2>{{'Metric' | translate}}
+                    </h2>
+                    <pep-select [key]="'aggregationsSelect'" [label]="'Select a aggregation'" [xAlignment]="'left'" [options]='aggregationsOptions' (valueChange)="onChartSelected($event)">
+                    </pep-select>
+                    <pep-select [key]="'fieldAggregationsSelect'" [label]="'Select a field'" [xAlignment]="'left'" [options]='aggregationsFieldsOptions' (valueChange)="onChartSelected($event)">
+                    </pep-select>
+                    <h2>{{'DynamicGraphs' | translate}}
+                    </h2>
+                    <pep-field-title [label]="'DynamicGraphsDescriptions' | translate" class="header">
+                    </pep-field-title>
+                    <pep-select [key]="'breakBySelect'" [label]="'Select a break by'" [xAlignment]="'left'" [options]='breakByOptions' (valueChange)="onChartSelected($event)">
+                    </pep-select>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <pep-textbox [label]="'Interval'" [type]="'text'" (valueChange)="onValueChanged('Name', $event)"></pep-textbox>
+                        <pep-select [key]="'intervalSelect'" [xAlignment]="'left'" [options]='intervalOptions' (valueChange)="onChartSelected($event)">
+                        </pep-select>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <pep-textbox [label]="'NumberOf' | translate"  [type]="'text'" (valueChange)="onValueChanged('Name', $event)"></pep-textbox>
+                        <pep-select  [label]="'Order'"  [key]="'intervalSelect'" [xAlignment]="'left'" [options]='orderOptions' (valueChange)="onChartSelected($event)">
+                        </pep-select>
+                    </div>
+                </div>
+            </mat-tab>
+            <!-- <mat-tab  id="3" label="{{'SetupTabHeader' | translate}}">
+                <addon-pepperi-list-exmaple [type]="'Setup'" [ID]='2' [isActive]="activeTabIndex === 2" [data]="activeTabIndex === 2 ? currentData : null"></addon-pepperi-list-exmaple>
+            </mat-tab> -->
+
+            <!-- <mat-tab *ngFor="let tab of relationsData; let index = index" [label]="getRelationDataTabLabel(tab)">
+                <addon-pepperi-list-exmaple [type]="'Relation'" [ID]=index+3 [isActive]="activeTabIndex === index+3" [relationsData]="activeTabIndex === index+3 ? tab : null"></addon-pepperi-list-exmaple>
+              </mat-tab> -->
+
+        </mat-tab-group>
+    </div>
+</pep-page-layout>

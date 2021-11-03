@@ -2,9 +2,11 @@
 <pep-page-layout>
 
     <pep-side-bar #sideBar [ignoreResize]="true">
-        <pep-select [key]="'chartSelect'" [label]="'Select a chart'" [xAlignment]="'left'" [options]='chartsOptions' (valueChange)="onChartSelected($event)">
+        <pep-select [key]="'chartSelect'" [label]="'Select a chart'" [xAlignment]="'left'" [options]='chartsOptions' 
+        (valueChange)="onChartSelected($event)">
         </pep-select>
-        <pep-select [key]="'querySelect'" [label]="'Select a data query'" [xAlignment]="'left'" [options]='queriesOptions' (valueChange)="onDataQuerySelected($event)">
+        <pep-select [key]="'querySelect'" [label]="'Select a data query'" [xAlignment]="'left'" [options]='queriesOptions' 
+        (valueChange)="onDataQuerySelected($event)">
         </pep-select>
     </pep-side-bar>
 

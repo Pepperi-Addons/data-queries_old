@@ -8,7 +8,7 @@ import { TranslateLoader, TranslateModule, TranslateService, TranslateStore } fr
 import { MultiTranslateHttpLoader } from 'ngx-translate-multi-http-loader';
 import { PepFieldTitleModule } from '@pepperi-addons/ngx-lib/field-title';
 import { AddonComponent } from './index';
-import {PepperiTableComponent} from './pepperi-table.component'
+import { PepperiTableComponent } from './pepperi-table.component'
 import { MatDialogModule } from '@angular/material/dialog';
 import { PepDialogService } from '@pepperi-addons/ngx-lib/dialog';
 import { PepAddonService, PepCustomizationService, PepFileService, PepHttpService } from '@pepperi-addons/ngx-lib';
@@ -18,6 +18,8 @@ import { PepSideBarModule } from '@pepperi-addons/ngx-lib/side-bar';
 import { PepTopBarModule } from '@pepperi-addons/ngx-lib/top-bar';
 import { PepListModule } from '@pepperi-addons/ngx-lib/list';
 import { PepAttachmentModule } from '@pepperi-addons/ngx-lib/attachment';
+import { MatTabsModule } from '@angular/material/tabs';
+import { QueryEditorComponent } from './query-editor/query-editor.component';
 
 export function createTranslateLoader(http: HttpClient, fileService: PepFileService, addonService: PepAddonService) {
     const translationsPath: string = fileService.getAssetsTranslationsPath();
@@ -55,6 +57,7 @@ export function createTranslateLoader(http: HttpClient, fileService: PepFileServ
         MatDialogModule,
         MatCardModule,
         PepFieldTitleModule,
+        MatTabsModule,
         PepAttachmentModule,
         //// When not using module as sub-addon please remark this for not loading twice resources
         TranslateModule.forChild({
@@ -73,7 +76,7 @@ export function createTranslateLoader(http: HttpClient, fileService: PepFileServ
 
 
     ],
-    exports:[AddonComponent],
+    exports: [AddonComponent],
     providers: [
         AddonService,
         HttpClient,
@@ -87,8 +90,8 @@ export function createTranslateLoader(http: HttpClient, fileService: PepFileServ
 })
 export class AddonModule {
     constructor(
-          translate: TranslateService
-      ) {
+        translate: TranslateService
+    ) {
 
         let userLang = 'en';
         translate.setDefaultLang(userLang);

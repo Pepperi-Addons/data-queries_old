@@ -1,5 +1,4 @@
 {
-
     "Ok": "Ok",
     "Select_Label": "Select Label",
     "Title_Addon": "Data queries",
@@ -9,6 +8,16 @@
     "Dialog_Title": "Dialog",
     "FailedExecuteFile": "Failed to execute the file content",
     "FailedLoadLibrary": "Failed to load library: {{library}}",
-    "DataVisualization": "Data Visualization"
-
+    "DataVisualization": "Data Visualization",
+    "DataQueriesTitle": "Data Visualization",
+    "General": "General",
+    "Content": "Content",
+    "Design": "Design",
+    "Title": "Title",
+    "Metric": "Metric",
+    "DynamicGraphs": "Dynamic Graphs",
+    "DynamicGraphsDescriptions": "Generate a seperate graph per each field value",
+    "Interval":"Interval",
+    "NumberOf":"Number Of",
+    "Order":"Order"
 }
